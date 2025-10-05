@@ -48,29 +48,46 @@ const makeCommits = (n) => {
     return git.push();
   }
 
-  const x = random.int(0, 54);
-  const y = random.int(0, 6);
+  // Start: exactly 1 year ago
+  const startDate = moment().subtract(3, "year").startOf("day");
 
-  const date = moment()
-    .subtract(2, "y")
-    .add(1, "d")
-    .add(x, "w")
-    .add(y, "d")
-    .format();
+  // End: right now
+  const endDate = moment();
+
+  // Generate a random timestamp between 1 year ago and now
+  const randomTimestamp = random.float(startDate.valueOf(), endDate.valueOf());
+
+  // Convert the random timestamp into a date
+  const date = moment(randomTimestamp);
+
+  // Safety check:
+  // Never allow a generated commit to be in the future.
+  if (date.isAfter(endDate)) {
+    date.set({
+      year: endDate.year(),
+      month: endDate.month(),
+      date: endDate.date(),
+      hour: endDate.hour(),
+      minute: endDate.minute(),
+      second: endDate.second(),
+    });
+  }
+
+  const formattedDate = date.format();
 
   const data = {
-    date,
+    date: formattedDate,
   };
 
-  console.log(`Creating commit: ${date}`);
+  console.log(`Creating commit: ${formattedDate}`);
 
   jsonfile.writeFile(path, data, () => {
     git.add([path]).commit(
-      date,
+      formattedDate,
       {
-        "--date": date,
+        "--date": formattedDate,
       },
-      makeCommits.bind(this, --n),
+      makeCommits.bind(this, n - 1),
     );
   });
 };
@@ -154,9 +171,9 @@ const deleteCommitsFromDate = async (cutoffDate) => {
  */
 
 // Generate 500 commits
-// makeCommits(500);
+makeCommits(100);
 
 // To delete commits instead, comment out the line above
 // and uncomment the line below:
 //
-deleteCommitsFromDate(DELETE_COMMITS_FROM);
+// deleteCommitsFromDate(DELETE_COMMITS_FROM);
